@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pago Móvil Express - Menú Principal</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Teko:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+          integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
+          crossorigin="anonymous">
+
+    <style>
+        :root {
+            --primary-color: #1e293b;
+            --secondary-color: #64748b;
+            --accent-color: #3b82f6;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --border-color: #e2e8f0;
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Teko', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .menu-container {
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 3px solid var(--border-color);
+        }
+        
+        .main-title {
+            font-family: 'Teko', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin: 0 0 0.5rem 0;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+        
+        .buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .menu-button {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            padding: 3rem 2rem;
+            text-align: center;
+            text-decoration: none;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .menu-button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 10px 10px -5px rgb(0 0 0 / 0.1);
+            border-color: var(--accent-color);
+        }
+        
+        .menu-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--accent-color);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.3s ease;
+        }
+        
+        .menu-button:hover::before {
+            transform: scaleX(1);
+        }
+        
+        .button-icon {
+            font-size: 4rem;
+            color: var(--accent-color);
+            transition: transform 0.3s ease;
+        }
+        
+        .menu-button:hover .button-icon {
+            transform: scale(1.1);
+        }
+        
+        .button-title {
+            font-family: 'Teko', sans-serif;
+            font-size: 2rem;
+            font-weight: 600;
+            margin: 0;
+            color: var(--primary-color);
+        }
+        
+        .button-description {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.6s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+        }
+        
+        /* 🔹 RESPONSIVE */
+        @media (max-width: 768px) {
+            .menu-container {
+                padding: 1.5rem;
+            }
+            
+            .main-title {
+                font-size: 2.5rem;
+            }
+            
+            .buttons-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .menu-button {
+                padding: 2.5rem 1.5rem;
+            }
+            
+            .button-icon {
+                font-size: 3rem;
+            }
+            
+            .button-title {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="menu-container fade-in">
+        <div class="header">
+            <h1 class="main-title">
+                <i class="fas fa-mobile-alt pulse" aria-hidden="true"></i> Pago Móvil Express
+            </h1>
+            <p class="subtitle">Selecciona el formato de comprobante que deseas generar</p>
+        </div>
+        
+        <div class="buttons-grid">
+            <!-- 🔹 BOTÓN FORMATO GRANDE -->
+            <a href="app_pagomovilgrande.html" class="menu-button fade-in" style="animation-delay: 0.1s;">
+                <i class="fas fa-file-alt button-icon" aria-hidden="true"></i>
+                <h2 class="button-title">Formato Grande</h2>
+                <p class="button-description">Comprobante tamaño completo con 8 repeticiones</p>
+            </a>
+            
+            <!-- 🔹 BOTÓN FORMATO MEDIANO -->
+            <a href="app_pagomovilmediano.html" class="menu-button fade-in" style="animation-delay: 0.2s;">
+                <i class="fas fa-copy button-icon" aria-hidden="true"></i>
+                <h2 class="button-title">Formato Mediano</h2>
+                <p class="button-description">Comprobante intermedio con 4 repeticiones</p>
+            </a>
+            
+            <!-- 🔹 BOTÓN FORMATO PEQUEÑO -->
+            <a href="app_pagomovilpequeño.html" class="menu-button fade-in" style="animation-delay: 0.3s;">
+                <i class="fas fa-sticky-note button-icon" aria-hidden="true"></i>
+                <h2 class="button-title">Formato Pequeño</h2>
+                <p class="button-description">Comprobante compacto con 2 repeticiones</p>
+            </a>
+        </div>
+    </div>
+</body>
+</html>
