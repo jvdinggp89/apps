@@ -420,7 +420,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label" for="logoImage">Logo del Negocio (Circular)</label>
+                        <label class="form-label" for="logoImage">Logo del Negocio</label>
                         <div class="file-input-wrapper">
                             <input type="file" id="logoImage" name="logoImage" class="file-input" accept="image/jpeg, image/jpg, image/png">
                             <label for="logoImage" class="file-input-label" id="logoLabel">
@@ -549,37 +549,45 @@
                             <div class="control-grid">
                                 <div class="form-group">
                                     <label class="form-label" for="negocioX">Posición X <span class="unit-label">(mm)</span></label>
-                                    <input type="number" id="negocioX" class="form-input" value="48.1" step="0.1">
+                                    <input type="number" id="negocioX" class="form-input" value="105" step="0.1">
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label" for="negocioY">Posición Y <span class="unit-label">(mm)</span></label>
-                                    <input type="number" id="negocioY" class="form-input" value="32.8" step="0.1">
+                                    <input type="number" id="negocioY" class="form-input" value="40" step="0.1">
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label" for="negocioSize">Tamaño Fuente <span class="unit-label">(pt)</span></label>
-                                    <input type="number" id="negocioSize" class="form-input" value="63" min="6" max="72">
+                                    <input type="number" id="negocioSize" class="form-input" value="28" min="6" max="72">
                                 </div>
                             </div>
                         </div>
 
                         <div class="field-group">
-                            <h4 class="field-title">Logo (Circular)</h4>
+                            <h4 class="field-title">Logo</h4>
                             <div class="control-grid">
                                 <div class="form-group">
                                     <label class="form-label" for="logoX">Posición X <span class="unit-label">(mm)</span></label>
-                                    <input type="number" id="logoX" class="form-input" value="17" step="0.1">
+                                    <input type="number" id="logoX" class="form-input" value="20" step="0.1">
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label" for="logoY">Posición Y <span class="unit-label">(mm)</span></label>
-                                    <input type="number" id="logoY" class="form-input" value="13.5" step="0.1">
+                                    <input type="number" id="logoY" class="form-input" value="20" step="0.1">
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label" for="logoSize">Diámetro <span class="unit-label">(mm)</span></label>
-                                    <input type="number" id="logoSize" class="form-input" value="28" step="0.1">
+                                    <label class="form-label" for="logoSize">Tamaño <span class="unit-label">(mm)</span></label>
+                                    <input type="number" id="logoSize" class="form-input" value="30" step="0.1">
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label" for="logoBorder">Borde <span class="unit-label">(mm)</span></label>
                                     <input type="number" id="logoBorder" class="form-input" value="1" step="0.1" min="0">
+                                </div>
+                                <!-- NUEVO SELECTOR DE FORMA -->
+                                <div class="form-group">
+                                    <label class="form-label" for="logoShape">Forma</label>
+                                    <select id="logoShape" class="form-input form-select">
+                                        <option value="circle">Circular</option>
+                                        <option value="rect">Cuadrada/Rect</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -636,11 +644,10 @@
         const MM_TO_PX = DPI / 25.4;
         const PX_TO_MM = 25.4 / DPI;
         
-        // CONFIGURACIÓN ESTÁTICA (Valores por defecto para los campos eliminados)
+        // CONFIGURACIÓN ESTÁTICA
         let CONFIG = {
             FONT_FAMILY: 'Teko',
             
-
             CEDULA: { x: 60, y: 64.5, size: 38 },
             TELEFONO: { x: 60, y: 81.5, size: 38 },
             BANCO: { x: 56, y: 98.9, size: 38 },
@@ -753,6 +760,14 @@
                 logoLabel.innerHTML = '<i class="fas fa-upload"></i><span>Seleccionar Logo (JPG/PNG)</span>';
                 logoImageData = null;
                 
+                // Limpiar Fondo
+                const bgInput = document.getElementById('bgImage');
+                const bgLabel = document.getElementById('bgLabel');
+                bgInput.value = '';
+                bgLabel.classList.remove('has-file');
+                bgLabel.innerHTML = '<i class="fas fa-upload"></i><span>Seleccionar imagen de fondo (JPG/PNG)</span>';
+                backgroundImage = null;
+
                 actualizarVistaPrevia();
                 showStatus('🗑️ Datos limpiados correctamente');
             }
@@ -782,9 +797,11 @@
                     if (size) CONFIG[item.toUpperCase()].size = parseFloat(size.value) || CONFIG[item.toUpperCase()].size;
                 });
 
-                // Borde del logo
+                // Borde del logo y forma
                 const logoBorderInput = document.getElementById('logoBorder');
+                const logoShapeInput = document.getElementById('logoShape');
                 if(logoBorderInput) CONFIG.LOGO.border = parseFloat(logoBorderInput.value) || 0;
+                if(logoShapeInput) CONFIG.LOGO.shape = logoShapeInput.value || 'circle';
                 
                 const canvas = document.getElementById('canvas');
                 const ctx = canvas.getContext('2d');
@@ -832,31 +849,48 @@
                 ctx.font = `bold ${pointToPx(CONFIG.FOOTER.size)}px ${CONFIG.FONT_FAMILY}`;
                 ctx.fillText(CONFIG.FOOTER.text, mmToPx(CONFIG.FOOTER.x), mmToPx(CONFIG.FOOTER.y));
                 
-                // LOGO CIRCULAR
+                // LOGO (CIRCULAR O RECTANGULAR)
                 if (logoImageData) {
                     const logoImg = new Image();
                     logoImg.onload = function() {
                         const x = mmToPx(CONFIG.LOGO.x);
                         const y = mmToPx(CONFIG.LOGO.y);
                         const size = mmToPx(CONFIG.LOGO.size);
-                        const radius = size / 2;
-                        const centerX = x + radius;
-                        const centerY = y + radius;
 
                         ctx.save();
-                        ctx.beginPath();
-                        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2, true);
-                        ctx.closePath();
-                        ctx.clip();
-                        ctx.drawImage(logoImg, x, y, size, size);
-                        ctx.restore();
-
-                        if (CONFIG.LOGO.border > 0) {
+                        
+                        if (CONFIG.LOGO.shape === 'circle') {
+                            const radius = size / 2;
+                            const centerX = x + radius;
+                            const centerY = y + radius;
+                            
+                            // Circular Clip
                             ctx.beginPath();
                             ctx.arc(centerX, centerY, radius, 0, Math.PI * 2, true);
-                            ctx.lineWidth = mmToPx(CONFIG.LOGO.border);
-                            ctx.strokeStyle = '#000000';
-                            ctx.stroke();
+                            ctx.closePath();
+                            ctx.clip();
+                            ctx.drawImage(logoImg, x, y, size, size);
+                            ctx.restore(); // Restore clip
+                            
+                            // Circular Border
+                            if (CONFIG.LOGO.border > 0) {
+                                ctx.beginPath();
+                                ctx.arc(centerX, centerY, radius, 0, Math.PI * 2, true);
+                                ctx.lineWidth = mmToPx(CONFIG.LOGO.border);
+                                ctx.strokeStyle = '#000000';
+                                ctx.stroke();
+                            }
+                        } else {
+                            // Rectangular (Square box based on size)
+                            ctx.drawImage(logoImg, x, y, size, size);
+                            ctx.restore(); // Restore just in case
+
+                            // Rectangular Border
+                            if (CONFIG.LOGO.border > 0) {
+                                ctx.lineWidth = mmToPx(CONFIG.LOGO.border);
+                                ctx.strokeStyle = '#000000';
+                                ctx.strokeRect(x, y, size, size);
+                            }
                         }
                     };
                     logoImg.src = logoImageData;
@@ -969,6 +1003,7 @@
             
             const requiredIds = ['estatusCedula', 'cedula', 'prefijoTelefono', 'telefono', 'banco'];
             const missing = requiredIds.some(id => !document.getElementById(id).value);
+            const cedulaVal = document.getElementById('cedula').value || 'sin_cedula';
 
             if (missing || !qrImageData) {
                 showStatus('❌ Completa los campos obligatorios y QR', 'error');
@@ -986,10 +1021,17 @@
                     
                     pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
                     
-                    const blobUrl = pdf.output('bloburl');
-                    window.open(blobUrl, '_blank');
+                    // Nueva lógica de nombre de archivo: (Timestamp)_(Cedula).pdf
+                    const timestamp = Math.floor(Date.now() / 1000);
+                    const filename = `${timestamp}_${cedulaVal}.pdf`;
+                    
+                    pdf.save(filename);
+                    
+                    // ABRIR EN NUEVA PESTAÑA AUTOMATICAMENTE
+                    window.open(pdf.output('bloburl'), '_blank');
+                    
                     guardarConfiguracion();
-                    showStatus('✅ PDF generado correctamente');
+                    showStatus(`✅ PDF generado: ${filename}`);
                 }, 500);
 
             } catch (error) {
@@ -1021,5 +1063,5 @@
         });
     </script>
 </body>
-
 </html>
+
