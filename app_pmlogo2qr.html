@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Pago Móvil Doble QR - BCV</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Teko:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #1e293b;
+            --secondary-color: #64748b;
+            --accent-color: #3b82f6;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --border-color: #e2e8f0;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Teko', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            min-height: 100vh;
+            align-items: flex-start;
+        }
+        
+        .form-section {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            padding: 2rem;
+            height: auto;
+            position: relative; 
+            z-index: 10;
+        }
+
+        .preview-section {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            padding: 2rem;
+            height: fit-content;
+            position: sticky;
+            top: 2rem;
+            z-index: 20;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        .main-title {
+            font-family: 'Teko', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin: 0 0 0.5rem 0;
+        }
+        
+        .subtitle {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+        
+        .form-grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 1rem;
+        }
+        
+        .form-label {
+            display: block;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .form-select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .file-input {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            z-index: 2;
+        }
+        
+        .file-input-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .file-input-label:hover {
+            border-color: var(--accent-color);
+            background: rgba(59, 130, 246, 0.05);
+        }
+        
+        .file-input-label.has-file {
+            border-color: var(--success-color);
+            background: rgba(16, 185, 129, 0.05);
+            color: var(--success-color);
+        }
+        
+        .collapsible-section {
+            height: auto;
+            max-height: 2000px; 
+            overflow: visible;
+            transition: max-height 0.4s ease, opacity 0.4s ease;
+            opacity: 1;
+        }
+        
+        .collapsible-section.collapsed {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .controls-section {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            margin-bottom: 1.5rem;
+        }
+        
+        .controls-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin: 0 0 1rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .control-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+        }
+        
+        .field-group {
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            margin-bottom: 1rem;
+        }
+        
+        .field-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin: 0 0 0.75rem 0;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Teko', sans-serif;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+        
+        .btn-primary { background: var(--accent-color); color: white; }
+        .btn-primary:hover { background: #2563eb; transform: translateY(-1px); box-shadow: var(--shadow-md); }
+        
+        .btn-secondary { background: var(--secondary-color); color: white; }
+        .btn-secondary:hover { background: #475569; transform: translateY(-1px); }
+        
+        .btn-success { background: var(--success-color); color: white; }
+        .btn-success:hover { background: #059669; transform: translateY(-1px); }
+        
+        .btn-warning { background: var(--warning-color); color: white; }
+        .btn-warning:hover { background: #d97706; transform: translateY(-1px); }
+        
+        .btn-danger { background: var(--error-color); color: white; }
+        .btn-danger:hover { background: #dc2626; transform: translateY(-1px); }
+        
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        
+        .btn-full { width: 100%; }
+        
+        .toggle-btn {
+            position: fixed;
+            left: 1rem;
+            top: 1rem;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 3rem;
+            height: 3rem;
+            font-size: 1.25rem;
+            cursor: pointer;
+            z-index: 1000;
+            box-shadow: var(--shadow-lg);
+            transition: all 0.3s ease;
+        }
+        
+        .toggle-btn:hover {
+            background: #2563eb;
+            transform: scale(1.1);
+        }
+        
+        .preview-canvas {
+            width: 100%;
+            max-width: 400px;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+            cursor: crosshair;
+            display: block;
+            margin: 0 auto 1rem auto;
+            transition: all 0.3s ease;
+        }
+        
+        .preview-canvas:hover {
+            border-color: var(--accent-color);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .coord-hud {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(15, 23, 42, 0.9);
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .status-message {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            background: var(--success-color);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            z-index: 1000;
+            box-shadow: var(--shadow-lg);
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+        
+        .status-message.show { transform: translateX(0); }
+        .status-message.error { background: var(--error-color); }
+        .status-message.warning { background: var(--warning-color); }
+        
+        .unit-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+        
+        .preview-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            text-align: center;
+            margin: 0 0 1.5rem 0;
+        }
+        
+        .preview-info {
+            text-align: center;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-top: 1rem;
+        }
+        
+        /* Estilos específicos para doble QR */
+        .form-group-doble {
+            background: #f0f9ff;
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 2px solid #bae6fd;
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group-doble h3 {
+            margin: 0 0 1.5rem 0;
+            font-size: 1.25rem;
+            color: #0369a1;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .form-group-doble.segundo {
+            background: #f0fdf4;
+            border-color: #86efac;
+        }
+        
+        .form-group-doble.segundo h3 {
+            color: #166534;
+        }
+        
+        @media (max-width: 768px) {
+            .container { grid-template-columns: 1fr; padding: 1rem; gap: 1rem; }
+            .form-section, .preview-section { position: relative !important; top: auto !important; z-index: auto !important; }
+            .form-section { padding-bottom: 6rem !important; }
+            .main-title { font-size: 2rem; }
+            .form-row { grid-template-columns: 1fr; }
+            .control-grid, .btn-group { grid-template-columns: 1fr; }
+            .toggle-btn { width: 2.5rem !important; height: 2.5rem !important; font-size: 1rem !important; position: fixed !important; left: 1rem !important; top: 1rem !important; transform: none !important; z-index: 1001 !important; }
+            .toggle-btn:hover { transform: scale(1.1) !important; }
+            .preview-section { margin-top: 2rem !important; }
+            .coord-hud { font-size: 0.625rem; padding: 0.5rem; z-index: 999 !important; }
+        }
+        
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    <button class="toggle-btn" id="btnToggleAjustes" title="Mostrar/Ocultar ajustes">
+        <i class="fas fa-cog"></i>
+    </button>
+    
+    <div class="coord-hud" id="coordHud">
+        <div>X: <span id="mouseX">0</span> mm</div>
+        <div>Y: <span id="mouseY">0</span> mm</div>
+        <div style="font-size: 0.625rem; margin-top: 0.25rem; opacity: 0.8;">
+            Usa para ajustar posiciones
+        </div>
+    </div>
+    
+    <div class="status-message" id="statusMessage"></div>
+    
+    <div class="container">
+        <!-- Form Section -->
+        <div class="form-section fade-in">
+            <div class="header">
+                <div class="main-title">Generador de Pago Móvil Doble QR</div>
+                <div class="subtitle">Sistema profesional para comprobantes BCV con 2 códigos QR</div>
+            </div>
+            
+            <form id="pagoMovilForm" class="form-grid">
+                
+                <!-- Datos del Negocio (ÚNICOS) -->
+                <div class="form-group" style="background: #fef3c7; padding: 1rem; border-radius: 8px; border: 1px solid #f59e0b;">
+                    <h3 style="margin: 0 0 1rem 0; font-size: 1rem; color: #92400e;"><i class="fas fa-store"></i> Datos del Comercio (Únicos)</h3>
+                    
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label class="form-label" for="nombreNegocio">Nombre del Negocio</label>
+                        <input type="text" id="nombreNegocio" name="nombreNegocio" class="form-input" placeholder="Ej: Inversiones Global C.A.">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="logoImage">Logo del Negocio</label>
+                        <div class="file-input-wrapper">
+                            <input type="file" id="logoImage" name="logoImage" class="file-input" accept="image/jpeg, image/jpg, image/png">
+                            <label for="logoImage" class="file-input-label" id="logoLabel">
+                                <i class="fas fa-upload"></i>
+                                <span>Seleccionar Logo (JPG/PNG)</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PRIMER FORMULARIO -->
+                <div class="form-group-doble">
+                    <h3><i class="fas fa-qrcode"></i> Primer Pago Móvil</h3>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="estatusCedula1">
+                                <i class="fas fa-user-tag"></i> Estatus
+                            </label>
+                            <select id="estatusCedula1" name="estatusCedula1" class="form-input form-select" required>
+                                <option value="">TIPO</option>
+                                <option value="V">V (Venezolano)</option>
+                                <option value="J">J (Jurídica)</option>
+                                <option value="E">E (Extranjero)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="cedula1">
+                                <i class="fas fa-id-card"></i> Cédula
+                            </label>
+                            <input type="text" id="cedula1" name="cedula1" class="form-input" placeholder="Ej: 18976404" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="prefijoTelefono1">
+                                <i class="fas fa-mobile-alt"></i> Prefijo
+                            </label>
+                            <select id="prefijoTelefono1" name="prefijoTelefono1" class="form-input form-select" required>
+                                <option value="">OPERADORA</option>
+                                <option value="0412">0412 (Digitel)</option>
+                                <option value="0422">0422 (Digitel)</option>
+                                <option value="0414">0414 (Movistar)</option>
+                                <option value="0424">0424 (Movistar)</option>
+                                <option value="0416">0416 (Movilnet)</option>
+                                <option value="0426">0426 (Movilnet)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="telefono1">
+                                <i class="fas fa-phone"></i> Teléfono
+                            </label>
+                            <input type="text" id="telefono1" name="telefono1" class="form-input" placeholder="Ej: 1307961" required maxlength="7" inputmode="numeric">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="banco1">
+                            <i class="fas fa-university"></i> Banco
+                        </label>
+                        <select id="banco1" name="banco1" class="form-input form-select" required>
+                            <option value="">SELECCIONE UN BANCO</option>
+                            <option value="0102-Venezuela">0102-VENEZUELA</option>
+                            <option value="0134-Banesco">0134-BANESCO</option>
+                            <option value="0105-Mercantil">0105-MERCANTIL</option>
+                            <option value="0108-Provincial">0108-PROVINCIAL</option>
+                            <option value="0191-BNC">0191-BNC</option>
+                            <option value="0172-BancaAmiga">0172-BANCAAMIGA</option>
+                            <option value="0114-Bancaribe">0114-BANCARIBE</option>
+                            <option value="0175-BDT">0175-BDT</option>
+                            <option value="0163-Tesoro">0163-TESORO</option>
+                            <option value="0177-BanFanb">0172-BANFANB</option>
+                            <option value="0172-Venezolano DC">0172-VENEZOLANO DC</option>
+                            <option value="0169-BancoR4">0169-R4</option>
+                            <option value="0601-IMC">0601-IMC</option>
+                            <option value="0157-Del Sur">0157-DELSUR</option>
+                            <option value="0151-BFC">0151-BFC</option>
+                            <option value="0174-Banplus">0174-BANPLUS</option>
+                            <option value="0168-BanCrecer">0168-BANCRECER</option>
+                            <option value="0137-SofiTasa">0137-SOFITASA</option>
+                            <option value="0138-BancoPlaza">0138-BANCOPLAZA</option>
+                            <option value="0115-Exterior">0115-EXTERIOR</option>
+                            <option value="0178-BancoN58">0178-N58</option>
+                            <option value="0146-GenteEmp">0146-GENTEEMP</option>
+                            <option value="0128-Caroni">0128-CARONI</option>
+                            <option value="0171-Activo">0171-ACTIVO</option>
+                            <option value="0156-100% Banco">0156-100%BANCO</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="qrCode1">
+                            <i class="fas fa-qrcode"></i> Código QR 1
+                        </label>
+                        <div class="file-input-wrapper">
+                            <input type="file" id="qrCode1" name="qrCode1" class="file-input" accept="image/jpeg, image/jpg, image/png" required>
+                            <label for="qrCode1" class="file-input-label" id="qrLabel1">
+                                <i class="fas fa-upload"></i>
+                                <span>Seleccionar imagen QR 1 (JPG/PNG)</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- SEGUNDO FORMULARIO -->
+                <div class="form-group-doble segundo">
+                    <h3><i class="fas fa-qrcode"></i> Segundo Pago Móvil</h3>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="estatusCedula2">
+                                <i class="fas fa-user-tag"></i> Estatus
+                            </label>
+                            <select id="estatusCedula2" name="estatusCedula2" class="form-input form-select" required>
+                                <option value="">TIPO</option>
+                                <option value="V">V (Venezolano)</option>
+                                <option value="J">J (Jurídica)</option>
+                                <option value="E">E (Extranjero)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="cedula2">
+                                <i class="fas fa-id-card"></i> Cédula
+                            </label>
+                            <input type="text" id="cedula2" name="cedula2" class="form-input" placeholder="Ej: 98765432" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="prefijoTelefono2">
+                                <i class="fas fa-mobile-alt"></i> Prefijo
+                            </label>
+                            <select id="prefijoTelefono2" name="prefijoTelefono2" class="form-input form-select" required>
+                                <option value="">OPERADORA</option>
+                                <option value="0412">0412 (Digitel)</option>
+                                <option value="0422">0422 (Digitel)</option>
+                                <option value="0414">0414 (Movistar)</option>
+                                <option value="0424">0424 (Movistar)</option>
+                                <option value="0416">0416 (Movilnet)</option>
+                                <option value="0426">0426 (Movilnet)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="telefono2">
+                                <i class="fas fa-phone"></i> Teléfono
+                            </label>
+                            <input type="text" id="telefono2" name="telefono2" class="form-input" placeholder="Ej: 9876543" required maxlength="7" inputmode="numeric">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="banco2">
+                            <i class="fas fa-university"></i> Banco
+                        </label>
+                        <select id="banco2" name="banco2" class="form-input form-select" required>
+                            <option value="">SELECCIONE UN BANCO</option>
+                            <option value="0102-Venezuela">0102-VENEZUELA</option>
+                            <option value="0134-Banesco">0134-BANESCO</option>
+                            <option value="0105-Mercantil">0105-MERCANTIL</option>
+                            <option value="0108-Provincial">0108-PROVINCIAL</option>
+                            <option value="0191-BNC">0191-BNC</option>
+                            <option value="0172-BancaAmiga">0172-BANCAAMIGA</option>
+                            <option value="0114-Bancaribe">0114-BANCARIBE</option>
+                            <option value="0175-BDT">0175-BDT</option>
+                            <option value="0163-Tesoro">0163-TESORO</option>
+                            <option value="0177-BanFanb">0172-BANFANB</option>
+                            <option value="0172-Venezolano DC">0172-VENEZOLANO DC</option>
+                            <option value="0169-BancoR4">0169-R4</option>
+                            <option value="0601-IMC">0601-IMC</option>
+                            <option value="0157-Del Sur">0157-DELSUR</option>
+                            <option value="0151-BFC">0151-BFC</option>
+                            <option value="0174-Banplus">0174-BANPLUS</option>
+                            <option value="0168-BanCrecer">0168-BANCRECER</option>
+                            <option value="0137-SofiTasa">0137-SOFITASA</option>
+                            <option value="0138-BancoPlaza">0138-BANCOPLAZA</option>
+                            <option value="0115-Exterior">0115-EXTERIOR</option>
+                            <option value="0178-BancoN58">0178-N58</option>
+                            <option value="0146-GenteEmp">0146-GENTEEMP</option>
+                            <option value="0128-Caroni">0128-CARONI</option>
+                            <option value="0171-Activo">0171-ACTIVO</option>
+                            <option value="0156-100% Banco">0156-100%BANCO</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="qrCode2">
+                            <i class="fas fa-qrcode"></i> Código QR 2
+                        </label>
+                        <div class="file-input-wrapper">
+                            <input type="file" id="qrCode2" name="qrCode2" class="file-input" accept="image/jpeg, image/jpg, image/png" required>
+                            <label for="qrCode2" class="file-input-label" id="qrLabel2">
+                                <i class="fas fa-upload"></i>
+                                <span>Seleccionar imagen QR 2 (JPG/PNG)</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="bgImage">
+                        <i class="fas fa-image"></i> Imagen de Fondo
+                    </label>
+                    <div class="file-input-wrapper">
+                        <input type="file" id="bgImage" name="bgImage" class="file-input" accept="image/jpeg, image/jpg, image/png">
+                        <label for="bgImage" class="file-input-label" id="bgLabel">
+                            <i class="fas fa-upload"></i>
+                            <span>Seleccionar imagen de fondo (JPG/PNG)</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- SECCIÓN AJUSTES (Solo Negocio y Logo) -->
+                <div class="collapsible-section" id="collapsibleSection">
+                    
+                    <div class="controls-section" style="border-color: #bae6fd;">
+                        <h3 class="controls-title" style="color: #0369a1;">
+                            <i class="fas fa-store-alt"></i> Ajustes de Negocio y Logo
+                        </h3>
+                        
+                        <div class="field-group">
+                            <h4 class="field-title">Nombre del Negocio</h4>
+                            <div class="control-grid">
+                                <div class="form-group">
+                                    <label class="form-label" for="negocioX">Posición X <span class="unit-label">(mm)</span></label>
+                                    <input type="number" id="negocioX" class="form-input" value="47.7" step="0.1">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="negocioY">Posición Y <span class="unit-label">(mm)</span></label>
+                                    <input type="number" id="negocioY" class="form-input" value="35.3" step="0.1">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="negocioSize">Tamaño Fuente <span class="unit-label">(pt)</span></label>
+                                    <input type="number" id="negocioSize" class="form-input" value="65" min="6" max="72">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="field-group">
+                            <h4 class="field-title">Logo</h4>
+                            <div class="control-grid">
+                                <div class="form-group">
+                                    <label class="form-label" for="logoX">Posición X <span class="unit-label">(mm)</span></label>
+                                    <input type="number" id="logoX" class="form-input" value="17.6" step="0.1">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="logoY">Posición Y <span class="unit-label">(mm)</span></label>
+                                    <input type="number" id="logoY" class="form-input" value="17" step="0.1">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="logoSize">Tamaño <span class="unit-label">(mm)</span></label>
+                                    <input type="number" id="logoSize" class="form-input" value="27.3" step="0.1">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="logoBorder">Borde <span class="unit-label">(mm)</span></label>
+                                    <input type="number" id="logoBorder" class="form-input" value="0" step="0.1" min="0">
+                                </div>
+                                <!-- NUEVO SELECTOR DE FORMA -->
+                                <div class="form-group">
+                                    <label class="form-label" for="logoShape">Forma</label>
+                                    <select id="logoShape" class="form-input form-select">
+                                        <option value="circle">Circular</option>
+                                        <option value="rect">Cuadrada/Rect</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                
+                <!-- Botones de Acción -->
+                <div class="btn-group">
+                    <button type="button" class="btn btn-secondary" id="btnGuardar">
+                        <i class="fas fa-save"></i> Guardar Config
+                    </button>
+                    <button type="button" class="btn btn-warning" id="btnPreview">
+                        <i class="fas fa-eye"></i> Vista Previa
+                    </button>
+                </div>
+                
+                <button type="button" class="btn btn-danger btn-full" id="btnLimpiar" style="margin-top: 1rem;">
+                    <i class="fas fa-broom"></i> Limpiar Datos
+                </button>
+                
+                <button type="submit" class="btn btn-primary btn-full" style="margin-top: 1rem;">
+                    <i class="fas fa-file-pdf"></i> Generar PDF Doble QR
+                </button>
+            </form>
+        </div>
+        
+        <!-- Sección de Vista Previa -->
+        <div class="preview-section fade-in">
+            <h3 class="preview-title">
+                <i class="fas fa-eye"></i> Vista Previa Doble QR
+            </h3>
+            
+            <canvas id="canvas" class="preview-canvas"></canvas>
+            
+            <div class="preview-info">
+                <i class="fas fa-mouse-pointer"></i> Mueve el mouse sobre el canvas para ver coordenadas en milímetros
+            </div>
+            
+            <div class="btn-group" style="margin-top: 1.5rem;">
+                <button type="button" class="btn btn-danger" id="btnRestaurar">
+                    <i class="fas fa-undo"></i> Restaurar
+                </button>
+                <button type="button" class="btn btn-success" id="btnDescargar">
+                    <i class="fas fa-download"></i> Descargar PNG
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Configuración de unidades
+        const DPI = 150;
+        const MM_TO_PX = DPI / 25.4;
+        const PX_TO_MM = 25.4 / DPI;
+        
+        // CONFIGURACIÓN ESTÁTICA PARA DOBLE QR
+        let CONFIG = {
+            FONT_FAMILY: 'Teko',
+            
+            // Posiciones para el primer QR (izquierda)
+            CEDULA1: { x: 26, y: 80, size: 35 },
+            TELEFONO1: { x: 26, y: 102.1, size: 35 },
+            BANCO1: { x: 24, y: 124.2, size: 30 },
+            QR1: { x: 72.2, y: 63.8, size: 60.1 },
+            
+            // Posiciones para el segundo QR (derecha)
+            CEDULA2: { x: 26, y: 151.4, size: 35 },
+            TELEFONO2: { x: 26, y: 173.3, size: 35 },
+            BANCO2: { x: 24, y: 195, size: 35 },
+            QR2: { x: 72.2, y: 135.6, size: 60.1 },
+            
+            // Negocio y Logo (únicos)
+            NEGOCIO: { x: 47.7, y: 35.3, size: 65 },
+            LOGO: { x: 17.6, y: 17, size: 27.3, border: 0 },
+            
+            FOOTER: { x: 152, y: 288, size: 21, text: 'Pago Móvil Doble QR - BCV' },
+            BG: { width: 210, height: 298, x: 0, y: 0, opacity: 1.0 }
+        };
+        
+        let backgroundImage = null;
+        let qrImageData1 = null;
+        let qrImageData2 = null;
+        let logoImageData = null;
+        let isLoading = false;
+        let isAjustesOcultos = false;
+        
+        function mmToPx(mm) { return Math.round(mm * MM_TO_PX); }
+        function pxToMm(px) { return (px * PX_TO_MM).toFixed(1); }
+        function pointToPx(pt) { return Math.round(pt * 1.333); }
+        
+        function guardarConfiguracion() {
+            try {
+                const config = {};
+                // Solo guardamos los inputs que existen (Negocio, Logo, Datos Formulario)
+                document.querySelectorAll('input[type="number"], input[type="text"], select').forEach(input => {
+                    if (input.id && !['qrCode1', 'qrCode2', 'bgImage', 'logoImage'].includes(input.id)) {
+                        config[input.id] = input.value;
+                    }
+                });
+                config.ajustesOcultos = isAjustesOcultos;
+                
+                localStorage.setItem('pagoMovilDobleConfig', JSON.stringify(config));
+                showStatus('✅ Configuración guardada');
+            } catch (error) {
+                console.error('Error al guardar:', error);
+                showStatus('❌ Error al guardar', 'error');
+            }
+        }
+        
+        function cargarConfiguracion() {
+            try {
+                const configGuardada = localStorage.getItem('pagoMovilDobleConfig');
+                if (configGuardada) {
+                    const config = JSON.parse(configGuardada);
+                    Object.entries(config).forEach(([key, value]) => {
+                        const input = document.getElementById(key);
+                        if (input) {
+                            if (input.type === 'checkbox') {
+                                input.checked = value;
+                            } else {
+                                input.value = value;
+                            }
+                        }
+                    });
+                    
+                    if (config.ajustesOcultos !== undefined) {
+                        isAjustesOcultos = config.ajustesOcultos;
+                        document.getElementById('collapsibleSection').classList.toggle('collapsed', isAjustesOcultos);
+                    }
+                    
+                    showStatus('📥 Configuración cargada');
+                    return true;
+                }
+            } catch (error) {
+                console.warn('Error al cargar configuración:', error);
+            }
+            return false;
+        }
+        
+        function restaurarValoresPorDefecto() {
+            if (confirm('⚠️ ¿Restaurar todos los valores por defecto? Se perderá tu configuración guardada.')) {
+                localStorage.removeItem('pagoMovilDobleConfig');
+                location.reload();
+            }
+        }
+        
+        function showStatus(message, type = 'success') {
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.textContent = message;
+            statusEl.className = `status-message ${type}`;
+            statusEl.classList.add('show');
+            setTimeout(() => statusEl.classList.remove('show'), 3000);
+        }
+        
+        function toggleAjustes() {
+            isAjustesOcultos = !isAjustesOcultos;
+            document.getElementById('collapsibleSection').classList.toggle('collapsed', isAjustesOcultos);
+            guardarConfiguracion();
+        }
+        
+        function limpiarDatos() {
+            if (confirm('¿Limpiar todos los datos?')) {
+                // Limpiar todos los campos de formulario
+                ['estatusCedula1', 'cedula1', 'prefijoTelefono1', 'telefono1', 'banco1', 
+                 'estatusCedula2', 'cedula2', 'prefijoTelefono2', 'telefono2', 'banco2', 
+                 'nombreNegocio'].forEach(id => {
+                    const element = document.getElementById(id);
+                    if (element) element.value = '';
+                });
+                
+                // Limpiar QR 1
+                const qr1Input = document.getElementById('qrCode1');
+                const qr1Label = document.getElementById('qrLabel1');
+                qr1Input.value = '';
+                qr1Label.classList.remove('has-file');
+                qr1Label.innerHTML = '<i class="fas fa-upload"></i><span>Seleccionar imagen QR 1 (JPG/PNG)</span>';
+                qrImageData1 = null;
+
+                // Limpiar QR 2
+                const qr2Input = document.getElementById('qrCode2');
+                const qr2Label = document.getElementById('qrLabel2');
+                qr2Input.value = '';
+                qr2Label.classList.remove('has-file');
+                qr2Label.innerHTML = '<i class="fas fa-upload"></i><span>Seleccionar imagen QR 2 (JPG/PNG)</span>';
+                qrImageData2 = null;
+
+                // Limpiar Logo
+                const logoInput = document.getElementById('logoImage');
+                const logoLabel = document.getElementById('logoLabel');
+                logoInput.value = '';
+                logoLabel.classList.remove('has-file');
+                logoLabel.innerHTML = '<i class="fas fa-upload"></i><span>Seleccionar Logo (JPG/PNG)</span>';
+                logoImageData = null;
+                
+                // Limpiar Fondo
+                const bgInput = document.getElementById('bgImage');
+                const bgLabel = document.getElementById('bgLabel');
+                bgInput.value = '';
+                bgLabel.classList.remove('has-file');
+                bgLabel.innerHTML = '<i class="fas fa-upload"></i><span>Seleccionar imagen de fondo (JPG/PNG)</span>';
+                backgroundImage = null;
+
+                actualizarVistaPrevia();
+                showStatus('🗑️ Datos limpiados correctamente');
+            }
+        }
+        
+        function actualizarVistaPrevia() {
+            if (isLoading) return;
+            
+            try {
+                // Datos del primer formulario
+                const estatus1 = document.getElementById('estatusCedula1').value;
+                const cedula1 = document.getElementById('cedula1').value;
+                const cedulaCompleta1 = estatus1 && cedula1 ? `${estatus1}-${cedula1}` : '';
+                const prefijo1 = document.getElementById('prefijoTelefono1').value;
+                const telefono1 = document.getElementById('telefono1').value;
+                const telefonoCompleto1 = prefijo1 && telefono1 ? `${prefijo1}-${telefono1}` : '';
+                const banco1 = document.getElementById('banco1').value;
+                
+                // Datos del segundo formulario
+                const estatus2 = document.getElementById('estatusCedula2').value;
+                const cedula2 = document.getElementById('cedula2').value;
+                const cedulaCompleta2 = estatus2 && cedula2 ? `${estatus2}-${cedula2}` : '';
+                const prefijo2 = document.getElementById('prefijoTelefono2').value;
+                const telefono2 = document.getElementById('telefono2').value;
+                const telefonoCompleto2 = prefijo2 && telefono2 ? `${prefijo2}-${telefono2}` : '';
+                const banco2 = document.getElementById('banco2').value;
+                
+                const nombreNegocio = document.getElementById('nombreNegocio').value;
+                
+                // Actualizar CONFIG solo para los campos que AÚN TIENEN INPUTS (Negocio y Logo)
+                ['negocio', 'logo'].forEach(item => {
+                    const x = document.getElementById(`${item}X`);
+                    const y = document.getElementById(`${item}Y`);
+                    const size = document.getElementById(`${item}Size`);
+                    
+                    if (x) CONFIG[item.toUpperCase()].x = parseFloat(x.value) || CONFIG[item.toUpperCase()].x;
+                    if (y) CONFIG[item.toUpperCase()].y = parseFloat(y.value) || CONFIG[item.toUpperCase()].y;
+                    if (size) CONFIG[item.toUpperCase()].size = parseFloat(size.value) || CONFIG[item.toUpperCase()].size;
+                });
+
+                // Borde del logo y forma
+                const logoBorderInput = document.getElementById('logoBorder');
+                const logoShapeInput = document.getElementById('logoShape');
+                if(logoBorderInput) CONFIG.LOGO.border = parseFloat(logoBorderInput.value) || 0;
+                if(logoShapeInput) CONFIG.LOGO.shape = logoShapeInput.value || 'circle';
+                
+                const canvas = document.getElementById('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = mmToPx(210);
+                canvas.height = mmToPx(297);
+                
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Imagen de fondo
+                if (backgroundImage?.complete && backgroundImage.width > 0) {
+                    ctx.globalAlpha = CONFIG.BG.opacity;
+                    ctx.drawImage(backgroundImage, mmToPx(CONFIG.BG.x), mmToPx(CONFIG.BG.y), mmToPx(CONFIG.BG.width), mmToPx(CONFIG.BG.height));
+                    ctx.globalAlpha = 1.0;
+                }
+                
+                // Textos
+                ctx.fillStyle = '#000000';
+                
+                // Nombre del Negocio
+                if (nombreNegocio) {
+                    ctx.font = `bold ${pointToPx(CONFIG.NEGOCIO.size)}px ${CONFIG.FONT_FAMILY}`;
+                    ctx.fillText(nombreNegocio, mmToPx(CONFIG.NEGOCIO.x), mmToPx(CONFIG.NEGOCIO.y));
+                }
+
+                // PRIMER QR - Datos (Lado izquierdo)
+                if (cedulaCompleta1) {
+                    ctx.font = `bold ${pointToPx(CONFIG.CEDULA1.size)}px ${CONFIG.FONT_FAMILY}`;
+                    ctx.fillText(cedulaCompleta1, mmToPx(CONFIG.CEDULA1.x), mmToPx(CONFIG.CEDULA1.y));
+                }
+                
+                if (telefonoCompleto1) {
+                    ctx.font = `bold ${pointToPx(CONFIG.TELEFONO1.size)}px ${CONFIG.FONT_FAMILY}`;
+                    ctx.fillText(telefonoCompleto1, mmToPx(CONFIG.TELEFONO1.x), mmToPx(CONFIG.TELEFONO1.y));
+                }
+                
+                if (banco1) {
+                    ctx.font = `bold ${pointToPx(CONFIG.BANCO1.size)}px ${CONFIG.FONT_FAMILY}`;
+                    ctx.fillText(banco1, mmToPx(CONFIG.BANCO1.x), mmToPx(CONFIG.BANCO1.y));
+                }
+
+                // SEGUNDO QR - Datos (Lado derecho)
+                if (cedulaCompleta2) {
+                    ctx.font = `bold ${pointToPx(CONFIG.CEDULA2.size)}px ${CONFIG.FONT_FAMILY}`;
+                    ctx.fillText(cedulaCompleta2, mmToPx(CONFIG.CEDULA2.x), mmToPx(CONFIG.CEDULA2.y));
+                }
+                
+                if (telefonoCompleto2) {
+                    ctx.font = `bold ${pointToPx(CONFIG.TELEFONO2.size)}px ${CONFIG.FONT_FAMILY}`;
+                    ctx.fillText(telefonoCompleto2, mmToPx(CONFIG.TELEFONO2.x), mmToPx(CONFIG.TELEFONO2.y));
+                }
+                
+                if (banco2) {
+                    ctx.font = `bold ${pointToPx(CONFIG.BANCO2.size)}px ${CONFIG.FONT_FAMILY}`;
+                    ctx.fillText(banco2, mmToPx(CONFIG.BANCO2.x), mmToPx(CONFIG.BANCO2.y));
+                }
+                
+                // Footer
+                ctx.font = `bold ${pointToPx(CONFIG.FOOTER.size)}px ${CONFIG.FONT_FAMILY}`;
+                ctx.fillText(CONFIG.FOOTER.text, mmToPx(CONFIG.FOOTER.x), mmToPx(CONFIG.FOOTER.y));
+                
+                // LOGO (CIRCULAR O RECTANGULAR)
+                if (logoImageData) {
+                    const logoImg = new Image();
+                    logoImg.onload = function() {
+                        const x = mmToPx(CONFIG.LOGO.x);
+                        const y = mmToPx(CONFIG.LOGO.y);
+                        const size = mmToPx(CONFIG.LOGO.size);
+
+                        ctx.save();
+                        
+                        if (CONFIG.LOGO.shape === 'circle') {
+                            const radius = size / 2;
+                            const centerX = x + radius;
+                            const centerY = y + radius;
+                            
+                            // Circular Clip
+                            ctx.beginPath();
+                            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2, true);
+                            ctx.closePath();
+                            ctx.clip();
+                            ctx.drawImage(logoImg, x, y, size, size);
+                            ctx.restore(); // Restore clip
+                            
+                            // Circular Border
+                            if (CONFIG.LOGO.border > 0) {
+                                ctx.beginPath();
+                                ctx.arc(centerX, centerY, radius, 0, Math.PI * 2, true);
+                                ctx.lineWidth = mmToPx(CONFIG.LOGO.border);
+                                ctx.strokeStyle = '#000000';
+                                ctx.stroke();
+                            }
+                        } else {
+                            // Rectangular (Square box based on size)
+                            ctx.drawImage(logoImg, x, y, size, size);
+                            ctx.restore(); // Restore just in case
+
+                            // Rectangular Border
+                            if (CONFIG.LOGO.border > 0) {
+                                ctx.lineWidth = mmToPx(CONFIG.LOGO.border);
+                                ctx.strokeStyle = '#000000';
+                                ctx.strokeRect(x, y, size, size);
+                            }
+                        }
+                    };
+                    logoImg.src = logoImageData;
+                }
+
+                // QR 1 (Lado izquierdo)
+                if (qrImageData1) {
+                    const qrImage1 = new Image();
+                    qrImage1.onload = function() {
+                        ctx.drawImage(qrImage1, mmToPx(CONFIG.QR1.x), mmToPx(CONFIG.QR1.y), mmToPx(CONFIG.QR1.size), mmToPx(CONFIG.QR1.size));
+                    };
+                    qrImage1.src = qrImageData1;
+                }
+
+                // QR 2 (Lado derecho)
+                if (qrImageData2) {
+                    const qrImage2 = new Image();
+                    qrImage2.onload = function() {
+                        ctx.drawImage(qrImage2, mmToPx(CONFIG.QR2.x), mmToPx(CONFIG.QR2.y), mmToPx(CONFIG.QR2.size), mmToPx(CONFIG.QR2.size));
+                    };
+                    qrImage2.src = qrImageData2;
+                }
+                
+            } catch (error) {
+                console.error('Error al actualizar vista previa:', error);
+            }
+        }
+        
+        // Event listeners
+        document.querySelectorAll('input[type="number"], input[type="text"], select').forEach(input => {
+            input.addEventListener('input', actualizarVistaPrevia);
+        });
+        
+        // Manejo de imagen de fondo manual
+        document.getElementById('bgImage').addEventListener('change', function(e) {
+            handleImageUpload(e, 'bgLabel', (result) => {
+                backgroundImage = new Image();
+                backgroundImage.onload = () => { isLoading = false; actualizarVistaPrevia(); showStatus('✅ Imagen cargada'); };
+                backgroundImage.src = result;
+            });
+        });
+        
+        // Manejo de QR 1
+        document.getElementById('qrCode1').addEventListener('change', function(e) {
+            handleImageUpload(e, 'qrLabel1', (result) => {
+                qrImageData1 = result;
+                isLoading = false;
+                actualizarVistaPrevia();
+                showStatus('✅ QR 1 cargado');
+            });
+        });
+
+        // Manejo de QR 2
+        document.getElementById('qrCode2').addEventListener('change', function(e) {
+            handleImageUpload(e, 'qrLabel2', (result) => {
+                qrImageData2 = result;
+                isLoading = false;
+                actualizarVistaPrevia();
+                showStatus('✅ QR 2 cargado');
+            });
+        });
+
+        // Manejo de Logo
+        document.getElementById('logoImage').addEventListener('change', function(e) {
+            handleImageUpload(e, 'logoLabel', (result) => {
+                logoImageData = result;
+                isLoading = false;
+                actualizarVistaPrevia();
+                showStatus('✅ Logo cargado');
+            });
+        });
+
+        function handleImageUpload(event, labelId, callback) {
+            const file = event.target.files[0];
+            const label = document.getElementById(labelId);
+            
+            if (file) {
+                isLoading = true;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    label.classList.add('has-file');
+                    label.innerHTML = `<i class="fas fa-check"></i><span>${file.name}</span>`;
+                    callback(e.target.result);
+                };
+                reader.readAsDataURL(file);
+            } else {
+                label.classList.remove('has-file');
+                label.innerHTML = '<i class="fas fa-upload"></i><span>Seleccionar archivo</span>';
+                callback(null);
+            }
+        }
+        
+        // Validación Teléfono 1
+        document.getElementById('telefono1').addEventListener('input', function(e) {
+            const valorOriginal = this.value;
+            let valorFiltrado = valorOriginal.replace(/[^0-9]/g, '');
+            if (valorFiltrado.length > 7) valorFiltrado = valorFiltrado.substring(0, 7);
+            if (valorOriginal !== valorFiltrado) this.value = valorFiltrado;
+        });
+
+        // Validación Teléfono 2
+        document.getElementById('telefono2').addEventListener('input', function(e) {
+            const valorOriginal = this.value;
+            let valorFiltrado = valorOriginal.replace(/[^0-9]/g, '');
+            if (valorFiltrado.length > 7) valorFiltrado = valorFiltrado.substring(0, 7);
+            if (valorOriginal !== valorFiltrado) this.value = valorFiltrado;
+        });
+        
+        // Botones
+        document.getElementById('btnGuardar').addEventListener('click', guardarConfiguracion);
+        document.getElementById('btnRestaurar').addEventListener('click', restaurarValoresPorDefecto);
+        document.getElementById('btnToggleAjustes').addEventListener('click', toggleAjustes);
+        document.getElementById('btnPreview').addEventListener('click', () => { actualizarVistaPrevia(); showStatus('✅ Vista actualizada'); });
+        
+        document.getElementById('btnDescargar').addEventListener('click', function() {
+            const canvas = document.getElementById('canvas');
+            const link = document.createElement('a');
+            link.download = `Pago_Movil_Doble_QR_Preview.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+        
+        document.getElementById('btnLimpiar').addEventListener('click', limpiarDatos);
+        
+        // Coordenadas del mouse
+        document.getElementById('canvas').addEventListener('mousemove', function(e) {
+            const rect = this.getBoundingClientRect();
+            const x = (e.clientX - rect.left) * (this.width / rect.width);
+            const y = (e.clientY - rect.top) * (this.height / rect.height);
+            document.getElementById('mouseX').textContent = pxToMm(x);
+            document.getElementById('mouseY').textContent = pxToMm(y);
+        });
+        
+        // Generar PDF
+        document.getElementById('pagoMovilForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const requiredIds1 = ['estatusCedula1', 'cedula1', 'prefijoTelefono1', 'telefono1', 'banco1'];
+            const requiredIds2 = ['estatusCedula2', 'cedula2', 'prefijoTelefono2', 'telefono2', 'banco2'];
+            const missing1 = requiredIds1.some(id => !document.getElementById(id).value);
+            const missing2 = requiredIds2.some(id => !document.getElementById(id).value);
+            const cedula1Val = document.getElementById('cedula1').value || 'sin_cedula1';
+            const cedula2Val = document.getElementById('cedula2').value || 'sin_cedula2';
+
+            if (missing1 || missing2 || !qrImageData1 || !qrImageData2) {
+                showStatus('❌ Completa ambos formularios y ambos QR', 'error');
+                return;
+            }
+            
+            try {
+                actualizarVistaPrevia(); 
+                
+                setTimeout(() => {
+                    const { jsPDF } = window.jspdf;
+                    const pdf = new jsPDF('p', 'mm', 'a4');
+                    const canvas = document.getElementById('canvas');
+                    const imgData = canvas.toDataURL('image/jpeg', 1.0);
+                    
+                    pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+                    
+                    // Nombre de archivo con ambas cédulas
+                    const timestamp = Math.floor(Date.now() / 1000);
+                    const filename = `${timestamp}_${cedula1Val}_${cedula2Val}.pdf`;
+                    
+                    pdf.save(filename);
+                    
+                    // ABRIR EN NUEVA PESTAÑA AUTOMATICAMENTE
+                    window.open(pdf.output('bloburl'), '_blank');
+                    
+                    guardarConfiguracion();
+                    showStatus(`✅ PDF generado: ${filename}`);
+                }, 500);
+
+            } catch (error) {
+                console.error('Error:', error);
+                showStatus('❌ Error al generar PDF', 'error');
+            }
+        });
+        
+        // Inicialización y Carga Automática de Fondo
+        window.addEventListener('load', function() {
+            // Intentar cargar fondo por defecto
+            const defaultBg = new Image();
+            defaultBg.src = 'Formato Grande 2 QR.jpg';
+            defaultBg.onload = function() {
+                backgroundImage = defaultBg;
+                const label = document.getElementById('bgLabel');
+                label.classList.add('has-file');
+                label.innerHTML = `<i class="fas fa-check"></i><span>Fondo Predeterminado</span>`;
+                console.log("Fondo cargado automáticamente");
+                actualizarVistaPrevia();
+            };
+            defaultBg.onerror = function() {
+                console.log("No se encontró fondoLogo.jpg, esperando carga manual.");
+            };
+
+            cargarConfiguracion();
+            setTimeout(actualizarVistaPrevia, 100);
+            showStatus('🚀 Aplicación lista para usar - Doble QR');
+        });
+    </script>
+</body>
+</html>
